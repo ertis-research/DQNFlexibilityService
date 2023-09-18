@@ -1,0 +1,13 @@
+# Ignora archivos del sistema Mac 
+.DS_store
+
+
+*.txt
+*.docx
+*.png
+
+
+.env
+
+
+.sass-cache
