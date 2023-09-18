@@ -4,9 +4,9 @@ import numpy as np
 from adabyron_environment.AdaByronDEMO import AdaByronDEMO
 from .models import *
     
-def define_env(run):
+def define_env(run, aires = [], cargadores = [], baterias = []):
         
-    env = AdaByronDEMO(["aire1"], ["estacion1"], ["bateria1"])
+    env = AdaByronDEMO(aires, cargadores, baterias)
     num_actions = env.action_space
     actionsPerAgents = env.getAgentsActionSpace()
     
@@ -21,10 +21,12 @@ def define_env(run):
     
     return env, policy_network, target_network, num_actions  
       
-def train(epsilon, MAX_STEPS, num_actions, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, scenario, type_s, model_type, gamma, loss_function, optimizer):
+def train(epsilon, MAX_STEPS, num_actions, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy):
     step = 0
     while True:
-        initial_state = np.array(env.reset())
+        inicial_state_consumption, _, _ = env.reset()
+        initial_state = np.array([inicial_state_consumption, step]+generated_energy)
+        
         for i in range(1, MAX_STEPS):
             step+=1
             if step < 50000 or np.random.rand(1)[0] < epsilon:
@@ -49,8 +51,8 @@ def train(epsilon, MAX_STEPS, num_actions, policy_network, EPS_DECAY, EPS_MIN, e
                 optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, num_actions)
             if step % STEP_UPDATE_MODEL == 0:
                 target_network.set_weights(policy_network.get_weights())
-                target_network.save("models/{}/{}/{}/targetNetwork_fineT.h5".format(scenario,type_s,model_type))
-                policy_network.save("models/{}/{}/{}/policyNetwork_fineT.h5".format(scenario,type_s,model_type))
+                target_network.save("models/{}/targetNetwork_fineT.h5".format("test"))
+                policy_network.save("models/{}/policyNetwork_fineT.h5".format("test"))
             if done: break
             
 def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, num_actions):

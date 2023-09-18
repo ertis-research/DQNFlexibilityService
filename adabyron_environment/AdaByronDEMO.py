@@ -15,11 +15,7 @@ class AdaByronDEMO(gym.Env):
         # Initialize all components
         self.airConditionings_list = airConditionings
         self.chargingStations_list = chargingStations
-        self.batteries_list = batteries
-        
-        # self.airConditionings = []
-        # self.chargingStations = []
-        # self.batteries = []     
+        self.batteries_list = batteries  
         
         self.agents = []
         self.initializeAgents()
@@ -56,7 +52,7 @@ class AdaByronDEMO(gym.Env):
         self.reward = 0
         self._episode_ended = False
         
-        return True
+        return self.getState(), self.reward, self._episode_ended
         
     def render(self, mode='human', close=False):
         # Render the environment to the screen
@@ -70,12 +66,12 @@ class AdaByronDEMO(gym.Env):
             print("Actual consumption: {}, Cumulative consumption: {}, ENDED: {}, Reward: {}".format(self.consumption, self.cumulative_consumption, self._episode_ended, self.reward))
     
     def getState(self):
-        return self.consumption, self.cumulative_consumption, self._episode_ended, self.reward
+        return self.consumption
     
     def getAgentsActionSpace(self):
         return [agent.get_action_space() for agent in self.agents]
     
-    def step(self, action):
+    def step(self, action, prediction = 0):
         # The action space is an array that contains the action for each agent
         # Execute one time step within the environment
         self.ac.turnOff()
@@ -93,4 +89,6 @@ class AdaByronDEMO(gym.Env):
                 c+=self.agents[index].step(action[index])
         self.cumulative_consumption += c
         
-        return self.getState()
+        self.reward = 0 if self.consumption - prediction == 0 else (0-abs(self.consumption - prediction))/100
+        
+        return self.getState(), self.reward, self._episode_ended
