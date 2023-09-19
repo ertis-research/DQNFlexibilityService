@@ -17,9 +17,9 @@ def basic_DQN(NUM_ACTIONS):
     return keras.Model(inputs=inputs, outputs=action)
 
 
-def multipleOutputs_DQN(actionsPerAgents):
+def multipleOutputs_DQN(INPUT_SIZE, actionsPerAgents):
     # Network defined by the Deepmind paper
-    inputs = layers.Input(shape=(10, ))
+    inputs = layers.Input(shape=(INPUT_SIZE, ))
 
     # Hidden layers
     layer1 = layers.Dense(128, activation="relu")(inputs)

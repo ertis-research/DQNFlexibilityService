@@ -4,7 +4,7 @@ import numpy as np
 from adabyron_environment.AdaByronDEMO import AdaByronDEMO
 from .models import *
     
-def define_env(run, aires = [], cargadores = [], baterias = []):
+def define_env(run, aires = [], cargadores = [], baterias = [], INPUT_SIZE=0):
         
     env = AdaByronDEMO(aires, cargadores, baterias)
     num_actions = env.action_space
@@ -16,8 +16,8 @@ def define_env(run, aires = [], cargadores = [], baterias = []):
         target_network = tf.keras.models.load_model("models/{}/targetNetwork.h5".format(run))
     except Exception as e:
         print("Models not found, creating new ones...")
-        policy_network = multipleOutputs_DQN(actionsPerAgents)
-        target_network = multipleOutputs_DQN(actionsPerAgents)
+        policy_network = multipleOutputs_DQN(INPUT_SIZE, actionsPerAgents)
+        target_network = multipleOutputs_DQN(INPUT_SIZE, actionsPerAgents)
     
     return env, policy_network, target_network, num_actions  
       
@@ -26,6 +26,7 @@ def train(epsilon, MAX_STEPS, num_actions, policy_network, EPS_DECAY, EPS_MIN, e
     while True:
         inicial_state_consumption, _, _ = env.reset()
         initial_state = np.array([inicial_state_consumption, step]+generated_energy)
+        
         
         for i in range(1, MAX_STEPS):
             step+=1
@@ -36,12 +37,12 @@ def train(epsilon, MAX_STEPS, num_actions, policy_network, EPS_DECAY, EPS_MIN, e
                 tf_tensor = tf.expand_dims(initial_state, 0)
 
                 output = policy_network(tf_tensor, training=False)
-
-                action = tf.argmax(output[0]).numpy()
+                action = [tf.argmax(i[0]).numpy() for i in output]
+                #action = tf.argmax(output[0]).numpy()
             epsilon-=EPS_DECAY
 
             epsilon = max(epsilon, EPS_MIN)
-            next_step, reward, done, _ = env.step(action)
+            next_step, reward, done, _ = env.step(action, generated_energy[step])
             next_step = np.array(next_step)
 
             memory.save(initial_state, action, reward, next_step, float(done))
