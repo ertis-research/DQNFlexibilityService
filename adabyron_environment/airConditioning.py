@@ -11,8 +11,9 @@ class Airconditioning():
     def getState(self):
         return self.airconditioningState
 
-    def turnOff(self):
+    def stop(self):
         self.airconditioningState = 0
+        return self.consumption()
     def smallChange(self):
         self.airconditioningState = 1
         return self.consumption()
@@ -27,7 +28,7 @@ class Airconditioning():
     def step(self, action):
         match action:
             case 0:
-                return self.turnOff()
+                return self.stop()
             case 1:
                 return self.smallChange()
             case 2:

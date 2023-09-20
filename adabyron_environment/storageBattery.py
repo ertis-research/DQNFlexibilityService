@@ -76,13 +76,16 @@ class StorageBattery():
                 return self.discharge20()
             case 4:
                 return self.discharge40()
-            case _:
+            case 5:
                 return self.discharge60()
+            case _:
+                return self.stop()
     def stop(self):
         """
             Stop processing
         """
         self.consumption = 0
+        return self.consumption
         
     def get_soc(self):
         """

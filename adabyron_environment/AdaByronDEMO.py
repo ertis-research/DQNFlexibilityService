@@ -20,13 +20,12 @@ class AdaByronDEMO(gym.Env):
         self.agents = []
         self.initializeAgents()
         
-        total_actions = 0
+        total_actions = []
         
         for agent in self.agents:
-            total_actions += agent.get_action_space()
+            total_actions.append(agent.get_action_space())
 
-
-        self.action_space = spaces.Discrete(total_actions)
+        self.action_space = (spaces.Discrete(sum(total_actions)), total_actions)
         
         self.consumption = 0
         self.cumulative_consumption = 0
@@ -71,24 +70,29 @@ class AdaByronDEMO(gym.Env):
     def getAgentsActionSpace(self):
         return [agent.get_action_space() for agent in self.agents]
     
-    def step(self, action, prediction = 0):
+    def step(self, action, indice, generated_energy):
         # The action space is an array that contains the action for each agent
         # Execute one time step within the environment
-        self.ac.turnOff()
-        self.cs.stop()
-        self.sb.stop()
-        if self._episode_ended:
-            self.reset()
+        for agent in self.agents:
+            agent.stop()
+        if indice == len(generated_energy)-1:
+            self._episode_ended = True
             
         c = 0
         # Execute the action for each agent
+        # No esta preparado para los cargadores
+        
+        
+        # for index in range(len(self.agents)):
+        #     if isinstance(self.agents[index], ChargingStation):
+        #         c+=self.agents[index].step(action[index][0], action[index][1])
+        #     else:
+        #         c+=self.agents[index].step(action[index])
+        
         for index in range(len(self.agents)):
-            if isinstance(self.agents[index], ChargingStation):
-                c+=self.agents[index].step(action[index][0], action[index][1])
-            else:
-                c+=self.agents[index].step(action[index])
+            c+=self.agents[index].step(action[index])
         self.cumulative_consumption += c
         
-        self.reward = 0 if self.consumption - prediction == 0 else (0-abs(self.consumption - prediction))/100
+        self.reward = 0 if self.consumption - generated_energy[len(generated_energy)-1] == 1 else (0-abs(self.consumption - generated_energy[len(generated_energy)-1]))/100
         
         return self.getState(), self.reward, self._episode_ended
