@@ -89,17 +89,22 @@ def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, lo
     mask = []
     
     for i in range(len(actions[0])):
-        mask.append(tf.one_hot(actions[0][i], action_space[1][i]))
+        mask.append(tf.expand_dims(tf.one_hot(actions[0][i], action_space[1][i]), 0))
     #mask = tf.one_hot(actions, action_space[1])
-    mask = np.array(mask)
     print("Mask")
-    print(np.shape(mask))
+    print(mask)
     
     with tf.GradientTape() as cinta:
         Qvalues = policy_network(states)
         print("Qvalues")
         print(Qvalues)
-        mult = tf.multiply(Qvalues, mask, axis=2)
+        print(type(Qvalues))
+        print(type(mask))
+        
+        for i in range(len(Qvalues)):
+            tf.multiply(Qvalues[i], mask[i])
+            
+        mult = tf.multiply(Qvalues, mask)
         y_pred = tf.reduce_sum(mult)
         loss = loss_function(y_target, y_pred)
 
