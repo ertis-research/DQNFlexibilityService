@@ -8,7 +8,6 @@ def define_env(run, aires = [], cargadores = [], baterias = [], INPUT_SIZE=0):
         
     env = AdaByronDEMO(aires, cargadores, baterias)
     action_space = env.action_space
-    actionsPerAgents = env.getAgentsActionSpace()
     
     try:
         print("Loading models...")
@@ -16,11 +15,20 @@ def define_env(run, aires = [], cargadores = [], baterias = [], INPUT_SIZE=0):
         target_network = tf.keras.models.load_model("models/{}/targetNetwork.h5".format(run))
     except Exception as e:
         print("Models not found, creating new ones...")
-        policy_network = multipleOutputs_DQN(INPUT_SIZE, actionsPerAgents)
-        target_network = multipleOutputs_DQN(INPUT_SIZE, actionsPerAgents)
+        policy_network = multipleOutputs_DQN(INPUT_SIZE, action_space[0].n)
+        target_network = multipleOutputs_DQN(INPUT_SIZE, action_space[0].n)
     
     return env, policy_network, target_network, action_space  
-      
+
+def action_selection(output, action_space):
+    output = output[0]
+    action = []
+    aux = 0
+    for i in range(len(action_space[1])):
+        action.append(tf.argmax(output[aux:action_space[1][i]+aux]).numpy())
+        aux+=action_space[1][i]
+    return action
+   
 def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy):
     step = 0
     while True:
@@ -39,8 +47,9 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
                 tf_tensor = tf.expand_dims(initial_state, 0)
 
                 output = policy_network(tf_tensor, training=False)
-                print(output)
-                action = [tf.argmax(i[0]).numpy() for i in output]
+                action = action_selection(output, action_space)
+                print("Acciones")
+                print(action)
                 #action = tf.argmax(output[0]).numpy()
             epsilon-=EPS_DECAY
 
@@ -88,22 +97,27 @@ def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, lo
 
     mask = []
     
-    for i in range(len(actions[0])):
-        mask.append(tf.expand_dims(tf.one_hot(actions[0][i], action_space[1][i]), 0))
+    # for i in range(len(actions[0])):
+    #     mask.append(tf.expand_dims(tf.one_hot(actions[0][i], action_space[1][i]), 0))
     #mask = tf.one_hot(actions, action_space[1])
     print("Mask")
+    for i in range(len(actions[0])):
+        mask= mask+tf.one_hot(actions[0][i], action_space[1][i]).numpy().tolist()
     print(mask)
-    
+
     with tf.GradientTape() as cinta:
         Qvalues = policy_network(states)
         print("Qvalues")
         print(Qvalues)
+        
         print(type(Qvalues))
         print(type(mask))
         
+        
+
         for i in range(len(Qvalues)):
             tf.multiply(Qvalues[i], mask[i])
-            
+        
         mult = tf.multiply(Qvalues, mask)
         y_pred = tf.reduce_sum(mult)
         loss = loss_function(y_target, y_pred)
