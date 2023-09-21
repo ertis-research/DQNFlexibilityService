@@ -48,8 +48,6 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
 
                 output = policy_network(tf_tensor, training=False)
                 action = action_selection(output, action_space)
-                print("Acciones")
-                print(action)
                 #action = tf.argmax(output[0]).numpy()
             epsilon-=EPS_DECAY
 
@@ -78,31 +76,17 @@ def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, lo
     #print(len(memory))
     print(len(next_steps))
     print(next_steps)
-    tam_max = max(action_space[1])
+ 
     qpvalues = target_network.predict(next_steps, verbose=0)
     
-
-    qpvalues_2 = []
-    for v in range(len(qpvalues)):
-        aux = tf.expand_dims(np.append(qpvalues[v][0], [float("-inf") for i in range(tam_max-action_space[1][v])]), 0)
-        qpvalues_2.append(aux)
-        #qpvalues[v][0]=np.concatenate((qpvalues[v][0],[float("-inf") for i in range(tam_max-action_space[1][v])]), axis=None)
-
-    
-    maximos = tf.reduce_max(qpvalues_2, axis = 2)
-    y_target = rewards + gamma*maximos
-    
+    y_target = rewards + gamma*qpvalues
     # Comento esta línea porque no existen los estados finales negativos en este problema
     #y_target = y_target * (1-dones_tensor) - dones_tensor
 
-    mask = []
     
-    # for i in range(len(actions[0])):
-    #     mask.append(tf.expand_dims(tf.one_hot(actions[0][i], action_space[1][i]), 0))
-    #mask = tf.one_hot(actions, action_space[1])
     print("Mask")
-    for i in range(len(actions[0])):
-        mask= mask+tf.one_hot(actions[0][i], action_space[1][i]).numpy().tolist()
+    print(actions)
+    mask = tf.one_hot(actions[0][i], action_space[1][i]).numpy()
     print(mask)
 
     with tf.GradientTape() as cinta:
