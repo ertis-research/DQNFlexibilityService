@@ -11,8 +11,8 @@ def define_env(run, aires = [], cargadores = [], baterias = [], INPUT_SIZE=0):
     
     try:
         print("Loading models...")
-        policy_network = tf.keras.models.load_model("models/{}/policyNetwork.h5".format(run))
-        target_network = tf.keras.models.load_model("models/{}/targetNetwork.h5".format(run))
+        policy_network = tf.keras.models.load_model("models/{}/policyNetwork_fineT.h5".format(run))
+        target_network = tf.keras.models.load_model("models/{}/targetNetwork_fineT.h5".format(run))
     except Exception as e:
         print("Models not found, creating new ones...")
         policy_network = multipleOutputs_DQN(INPUT_SIZE, action_space[0].n)
@@ -25,13 +25,16 @@ def action_selection(output, action_space):
     action = []
     aux = 0
     for i in range(len(action_space[1])):
-        action.append(tf.argmax(output[aux:action_space[1][i]+aux]).numpy())
+        action.append(tf.argmax(output[aux:action_space[1][i]+aux]).numpy()+aux)
         aux+=action_space[1][i]
     return action
    
 def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy):
     step = 0
+    episode = 0
     while True:
+        print("Episode: {}".format(episode))
+        episode+=1
         inicial_state_consumption, _, _ = env.reset()
         day_step = 0
         initial_state = np.array([inicial_state_consumption, day_step]+generated_energy)
@@ -41,7 +44,11 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
             step+=1
             if step < 50000 or np.random.rand(1)[0] < epsilon:
                 #action = random.randint(0, action_space[0]-1)
-                action = [random.randint(0, agent_as) for agent_as in action_space[1]]
+                aux = 0
+                action = []
+                for i in range(len(action_space[1])):
+                    action.append(random.randint(aux, action_space[1][i]+aux))
+                    aux+=action_space[1][i]
             else:
                 tf_tensor = tf.convert_to_tensor(initial_state)
                 tf_tensor = tf.expand_dims(initial_state, 0)
@@ -72,39 +79,39 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
             
 def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space):
     states, actions, rewards, next_steps, dones = memory.sample(BATCH_SIZE)
-    #dones_tensor = tf.convert_to_tensor(dones)
-    #print(len(memory))
-    print(len(next_steps))
-    print(next_steps)
  
     qpvalues = target_network.predict(next_steps, verbose=0)
+
+    action_mask = action_selection(qpvalues, action_space)
+
+    qpvalues_mask = tf.one_hot([action_mask], action_space[0].n, axis=2).numpy()
+    qpvalues_mask = tf.reduce_sum(qpvalues_mask, axis=1).numpy()
+    qpvalues = tf.multiply(qpvalues, qpvalues_mask)
+    
+    #qpvalues = tf.reduce_max(qpvalues, axis=1)
+    qpvalues = tf.reduce_sum(qpvalues, axis=1)
     
     y_target = rewards + gamma*qpvalues
+    # print("y_target")
+    # print(y_target)
     # Comento esta línea porque no existen los estados finales negativos en este problema
     #y_target = y_target * (1-dones_tensor) - dones_tensor
 
     
-    print("Mask")
-    print(actions)
-    mask = tf.one_hot(actions[0][i], action_space[1][i]).numpy()
-    print(mask)
+    
+    mask = tf.one_hot(actions, action_space[0].n, axis=2).numpy()
+    mask = tf.reduce_sum(mask, axis=1).numpy()
+
 
     with tf.GradientTape() as cinta:
         Qvalues = policy_network(states)
-        print("Qvalues")
-        print(Qvalues)
-        
-        print(type(Qvalues))
-        print(type(mask))
-        
-        
-
-        for i in range(len(Qvalues)):
-            tf.multiply(Qvalues[i], mask[i])
-        
         mult = tf.multiply(Qvalues, mask)
-        y_pred = tf.reduce_sum(mult)
+        y_pred = tf.reduce_sum(mult, axis = 1)
         loss = loss_function(y_target, y_pred)
+        
+        # print("y_pred")
+        # print(y_pred)
+        # print(y_target)
 
     gradients = cinta.gradient(loss, policy_network.trainable_variables)
     optimizer.apply_gradients(zip(gradients, policy_network.trainable_variables))
