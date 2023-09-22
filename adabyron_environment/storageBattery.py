@@ -67,19 +67,19 @@ class StorageBattery():
     def step(self, action):
         match action:
             case 0:
-                return self.charge20()
-            case 1:
-                return self.charge40()
-            case 2:
-                return self.charge60()
-            case 3:
-                return self.discharge20()
-            case 4:
-                return self.discharge40()
-            case 5:
-                return self.discharge60()
-            case _:
                 return self.stop()
+            case 1:
+                return self.charge20()
+            case 2:
+                return self.charge40()
+            case 3:
+                return self.charge60()
+            case 4:
+                return self.discharge20()
+            case 5:
+                return self.discharge40()
+            case _:
+                return self.discharge60()
     def stop(self):
         """
             Stop processing

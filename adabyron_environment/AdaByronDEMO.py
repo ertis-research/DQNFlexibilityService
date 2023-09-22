@@ -92,6 +92,7 @@ class AdaByronDEMO(gym.Env):
         for index in range(len(self.agents)):
             c+=self.agents[index].step(action[index])
         self.cumulative_consumption += c
+        self.consumption = c
         
         self.reward = 0 if self.consumption - generated_energy[len(generated_energy)-1] == 1 else (0-abs(self.consumption - generated_energy[len(generated_energy)-1]))/100
         
