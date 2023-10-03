@@ -28,7 +28,16 @@ def action_selection(output, action_space):
         action.append(tf.argmax(output[aux:action_space[1][i]+aux]).numpy()+aux)
         aux+=action_space[1][i]
     return action
-   
+
+def randomActions(action_space):
+    aux = 0
+    action = []
+    for agent_actions in action_space[1]:
+        action.append(random.randint(0, agent_actions-1)+aux)
+        aux+=agent_actions
+    return action
+
+
 def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy, episodes, run_name):
     step = 0
     episode = 0
@@ -44,11 +53,7 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
             step+=1
             if step < 50000 or np.random.rand(1)[0] < epsilon:
                 #action = random.randint(0, action_space[0]-1)
-                aux = 0
-                action = []
-                for i in range(len(action_space[1])):
-                    action.append(random.randint(aux, action_space[1][i]+aux))
-                    aux+=action_space[1][i]
+                action = randomActions(action_space)
             else:
                 tf_tensor = tf.convert_to_tensor(initial_state)
                 tf_tensor = tf.expand_dims(initial_state, 0)
@@ -75,6 +80,8 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
                 target_network.set_weights(policy_network.get_weights())
                 target_network.save("models/{}/targetNetwork_fineT.h5".format(run_name))
                 policy_network.save("models/{}/policyNetwork_fineT.h5".format(run_name))
+                print("Models saved")
+                print("Epsilon {}".format(epsilon))
             if done: break
             
 def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space):

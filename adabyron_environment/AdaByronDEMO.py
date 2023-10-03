@@ -98,15 +98,22 @@ class AdaByronDEMO(gym.Env):
             aux += self.action_space[1][i]
             #print(self.action_space[1][i])
         
-        print("Fixed actions: {}".format(fixed_actions))
+        #print("Fixed actions: {}".format(fixed_actions))
         
         for index in range(len(self.agents)):
-            print("Index : {}".format(index))
-            c+=self.agents[index].step(fixed_actions[index])
-            print("Consumption: {}".format(c))
+            agent_comsumption = self.agents[index].step(fixed_actions[index])
+            c+=agent_comsumption
+            #print("Consumption: {}".format(c))
         self.cumulative_consumption += c
         self.consumption = c
+        #print(generated_energy[indice])
+        # print("Calculo de la recompensa")
+        # print("Consumo: {}".format(self.consumption))
+        # print("Generacion: {}".format(generated_energy[indice]))
+        # print("Diferencia: {}".format(abs(self.consumption - generated_energy[indice])))
+        # print("Resta a 0: {}".format((0-abs(self.consumption - generated_energy[indice]))))
+        # print("Recompensa: {}".format((0-abs(self.consumption - generated_energy[indice]))/100))
         
-        self.reward = 0 if self.consumption - generated_energy[len(generated_energy)-1] == 1 else (0-abs(self.consumption - generated_energy[len(generated_energy)-1]))/100
+        self.reward = 0 if self.consumption - generated_energy[indice] == 0 else (0-abs(self.consumption - generated_energy[indice]))/100
         
         return self.getState(), self.reward, self._episode_ended
