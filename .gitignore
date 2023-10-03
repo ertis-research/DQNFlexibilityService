@@ -6,8 +6,9 @@
 *.docx
 *.png
 
-
 .env
 
 
 .sass-cache
+
+models/

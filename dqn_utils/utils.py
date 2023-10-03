@@ -29,10 +29,10 @@ def action_selection(output, action_space):
         aux+=action_space[1][i]
     return action
    
-def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy):
+def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, env, memory, BATCH_SIZE, STEP_UPDATE_MODEL, target_network, K, gamma, loss_function, optimizer, generated_energy, episodes, run_name):
     step = 0
     episode = 0
-    while True:
+    while episode <= episodes:
         print("Episode: {}".format(episode))
         episode+=1
         inicial_state_consumption, _, _ = env.reset()
@@ -73,8 +73,8 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
                 optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space)
             if step % STEP_UPDATE_MODEL == 0:
                 target_network.set_weights(policy_network.get_weights())
-                target_network.save("models/{}/targetNetwork_fineT.h5".format("test"))
-                policy_network.save("models/{}/policyNetwork_fineT.h5".format("test"))
+                target_network.save("models/{}/targetNetwork_fineT.h5".format(run_name))
+                policy_network.save("models/{}/policyNetwork_fineT.h5".format(run_name))
             if done: break
             
 def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space):

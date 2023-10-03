@@ -71,10 +71,11 @@ class AdaByronDEMO(gym.Env):
         return [agent.get_action_space() for agent in self.agents]
     
     def step(self, action, indice, generated_energy):
+        
         # The action space is an array that contains the action for each agent
         # Execute one time step within the environment
-        for agent in self.agents:
-            agent.stop()
+        # for agent in self.agents:
+        #     agent.stop()
         if indice == len(generated_energy)-1:
             self._episode_ended = True
             
@@ -89,8 +90,20 @@ class AdaByronDEMO(gym.Env):
         #     else:
         #         c+=self.agents[index].step(action[index])
         
+        fixed_actions = []
+        aux = 0
+        for i in range(len(action)):
+            fixed_actions.append(action[i]-aux)
+            #print("La accion {} es {}, con aux {}".format(action[i], action[i]-aux, aux))
+            aux += self.action_space[1][i]
+            #print(self.action_space[1][i])
+        
+        print("Fixed actions: {}".format(fixed_actions))
+        
         for index in range(len(self.agents)):
-            c+=self.agents[index].step(action[index])
+            print("Index : {}".format(index))
+            c+=self.agents[index].step(fixed_actions[index])
+            print("Consumption: {}".format(c))
         self.cumulative_consumption += c
         self.consumption = c
         
