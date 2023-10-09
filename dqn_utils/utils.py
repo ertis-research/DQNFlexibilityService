@@ -42,7 +42,8 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
     step = 0
     episode = 0
     while episode <= episodes:
-        print("Episode: {}".format(episode))
+        if episode % 100 == 0:
+            print("Episode: {}".format(episode))
         episode+=1
         inicial_state_consumption, _, _ = env.reset()
         day_step = 0
