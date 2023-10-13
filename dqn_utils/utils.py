@@ -76,7 +76,7 @@ def train(epsilon, MAX_STEPS, action_space, policy_network, EPS_DECAY, EPS_MIN, 
                 initial_state = next_step
             
             if step % K == 0 and len(memory) >= BATCH_SIZE:
-                optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space)
+                policy_network = optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, loss_function, optimizer, action_space)
             if step % STEP_UPDATE_MODEL == 0:
                 target_network.set_weights(policy_network.get_weights())
                 target_network.save("models/{}/targetNetwork_fineT.h5".format(run_name))
@@ -123,3 +123,5 @@ def optimize_model(memory, BATCH_SIZE, target_network, policy_network, gamma, lo
 
     gradients = cinta.gradient(loss, policy_network.trainable_variables)
     optimizer.apply_gradients(zip(gradients, policy_network.trainable_variables))
+
+    return policy_network
